@@ -1,28 +1,27 @@
-.idea
-.DS_Store
-.env*
-!.env.example
-!.env.defaults
-.netlify
-.redwood/*
-!.redwood/README.md
-dev.db*
-dist
-dist-babel
+# Dependencies
 node_modules
-yarn-error.log
-web/public/mockServiceWorker.js
-web/types/graphql.d.ts
-api/types/graphql.d.ts
-api/src/lib/generateGraphiQLHeader.*
-.pnp.*
-.yarn/*
-!.yarn/patches
-!.yarn/plugins
-!.yarn/releases
-!.yarn/sdks
-!.yarn/versions
-.claude
-.agents
+
+# Next.js
+.next
+out
+next-env.d.ts
+*.tsbuildinfo
+
+# Build artefacts (the rendered nginx security headers)
+build
+
+# Tests
 test-results
 playwright-report
+coverage
+
+# Local environment
+.env
+.env*.local
+
+# Editors and tooling
+.idea
+.DS_Store
+*.log
+.claude
+.agents
