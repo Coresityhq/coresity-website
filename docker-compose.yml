@@ -4,8 +4,8 @@
 #   ./scripts/docker/prod.sh up      (or: docker compose up -d --build --wait)
 #   open http://localhost:8910
 #
-# Port 8910 is Redwood's dev port, so `yarn test:e2e` runs against this
-# container unchanged (playwright.config.ts reuses an existing server).
+# Port 8910 is also the dev and preview port, so `npm run test:e2e` runs against
+# this container unchanged (playwright.config.ts reuses an existing server).
 # Deployments use deploy/vps or deploy/secretvm instead.
 
 # Separate from docker-compose.dev.yml's project, so the two never replace

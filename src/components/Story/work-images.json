@@ -1,0 +1,17 @@
+{
+  "hr-boolean": {
+    "widths": [480, 800, 1200],
+    "width": 1200,
+    "height": 1200
+  },
+  "investor-deck": {
+    "widths": [480, 800, 1200],
+    "width": 1200,
+    "height": 1200
+  },
+  "iso45001": {
+    "widths": [480, 800, 1200],
+    "width": 1200,
+    "height": 1200
+  }
+}

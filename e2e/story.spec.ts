@@ -7,14 +7,21 @@ import type { Page } from '@playwright/test'
 // reduced motion, the light/dark theme, the drifting field-notes rail, a
 // clean console and no horizontal overflow on a phone.
 
-// Scroll so that a pinned scene is `p` of the way through its range.
+// Scroll so that a pinned scene is `p` of the way through its range. The
+// story mounts in the browser after the page has loaded, so wait for the scene;
+// and jump rather than glide, since the page's smooth scrolling would still be
+// in flight when the assertions run.
 const scrollScene = async (page: Page, name: string, p: number) => {
+  await page.waitForSelector(`[data-scene="${name}"]`)
   await page.evaluate(
     ([name, p]) => {
       const el = document.querySelector(`[data-scene="${name}"]`) as HTMLElement
       const H = window.innerHeight
       const top = el.getBoundingClientRect().top + window.scrollY
-      window.scrollTo(0, top + (p as number) * (el.offsetHeight - H))
+      window.scrollTo({
+        top: top + (p as number) * (el.offsetHeight - H),
+        behavior: 'instant',
+      })
     },
     [name, p] as const
   )
@@ -102,23 +109,23 @@ test('the problem scene lands on its question near the end of its pin', async ({
 
   await scrollScene(page, 'problem', 0.9)
   await expect(question).toHaveCSS('opacity', '1', { timeout: 3000 })
-  await expect(question).toContainText('bigger?')
+  await expect(question).toContainText('information?')
 })
 
-test('the model scene runs from Discover to Develop', async ({ page }) => {
+test('the model scene runs from Problem to Result', async ({ page }) => {
   await page.goto('/')
 
   await scrollScene(page, 'model', 0.08)
   await expect(page.locator('[data-mp="0"]')).toHaveCSS('opacity', '1', {
     timeout: 3000,
   })
-  await expect(page.locator('[data-mp="0"]')).toContainText('Discover')
+  await expect(page.locator('[data-mp="0"]')).toContainText('Problem')
 
   await scrollScene(page, 'model', 0.97)
   await expect(page.locator('[data-mp="5"]')).toHaveCSS('opacity', '1', {
     timeout: 3000,
   })
-  await expect(page.locator('[data-mp="5"]')).toContainText('Develop')
+  await expect(page.locator('[data-mp="5"]')).toContainText('Result')
 })
 
 test('scrolling the whole story logs no console errors', async ({ page }) => {

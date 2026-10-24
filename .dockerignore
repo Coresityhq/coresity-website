@@ -2,15 +2,14 @@
 # build context small and keeps local secrets and host-built files out of it.
 
 # Dependencies and build output (host-built node_modules are macOS binaries)
-**/node_modules
-**/dist
-.redwood
-.yarn/install-state.gz
+node_modules
+.next
+out
+build
 
-# Local environment and secrets (.env.defaults is needed and stays in)
-**/.env
-.env.local
-**/*.db
+# Local environment and secrets
+.env
+.env*.local
 
 # Git, editors, tooling
 .git
@@ -20,18 +19,28 @@
 .editorconfig
 .claude
 .agents
-**/.DS_Store
+.DS_Store
 *.log
+
+# Portfolio image sources (the generated variants in public/ are what ships)
+assets
+scripts/images.mjs
 
 # Tests and reports
 e2e
 playwright-report
 test-results
+playwright.config.ts
+vitest.config.ts
+vitest.setup.ts
 
-# Docker and deployment files
+# Docker and deployment files (scripts/csp-hashes.mjs is needed and stays in)
 Dockerfile
 .dockerignore
 docker-compose*.yml
 deploy
-scripts
+scripts/docker
+scripts/preview.mjs
 docs
+*.md
+skills-lock.json

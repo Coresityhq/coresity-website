@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
 # Smoke-test a running Coresity web deployment over HTTP(S): health, pages,
-# SPA fallback, assets and their caching, security headers.
+# the 404 page, assets and their caching, security headers.
 #
 # Usage: scripts/docker/smoke.sh [base-url] [-k|--insecure]
 #
-#   base-url       default http://localhost:8910 (prod.sh); also works against
-#                  the VPS or SecretVM URL, e.g. https://coresity.com
+#   base-url       default http://localhost:8910 (prod.sh or `npm run preview`);
+#                  also works against the VPS or SecretVM URL, e.g.
+#                  https://coresity.com
 #   -k, --insecure accept a self-signed certificate
 #
 # Runs every check, then exits non-zero if any failed.
@@ -33,6 +34,9 @@ work="$(mktemp -d)"
 trap 'rm -rf "$work"' EXIT
 failures=0
 
+# Every exported page carries this on <body> (src/app/layout.tsx).
+marker='data-app="coresity"'
+
 pass() { ok "$1"; }
 fail() {
   printf '%s✖%s %s\n' "$C_RED" "$C_RESET" "$1"
@@ -49,13 +53,14 @@ fetch() {
 }
 header() { grep -i "^$1:" "${work}/headers" | head -1 | cut -d: -f2- | tr -d '\r' | sed 's/^ *//'; }
 
-# check_page <path> <label>: a 200 HTML page with the Redwood mount point.
+# check_page <path> <label> [status]: an HTML page of the site (200 by default).
 check_page() {
+  local want="${3:-200}"
   fetch "$1"
-  if [[ "$STATUS" == 200 && "$(header content-type)" == text/html* ]] && grep -q 'id="redwood-app"' "${work}/body"; then
+  if [[ "$STATUS" == "$want" && "$(header content-type)" == text/html* ]] && grep -q "$marker" "${work}/body"; then
     pass "$2"
   else
-    fail "$2 (status ${STATUS}, content-type '$(header content-type)')"
+    fail "$2 (status ${STATUS}, wanted ${want}, content-type '$(header content-type)')"
   fi
 }
 
@@ -64,23 +69,33 @@ info "Smoke-testing ${base}"
 fetch /healthz
 if [[ "$STATUS" == 200 ]]; then pass "/healthz returns 200"; else fail "/healthz returns 200 (got ${STATUS})"; fi
 
-check_page / "/ serves the app"
+check_page / "/ serves the homepage"
 index_html="$(cat "${work}/body")"
 
 for name in content-security-policy x-content-type-options x-frame-options referrer-policy; do
   if [[ -n "$(header "$name")" ]]; then pass "/ sends ${name}"; else fail "/ sends ${name}"; fi
 done
+csp="$(header content-security-policy)"
+script_src="$(printf '%s' "$csp" | tr ';' '\n' | grep -E '^ *script-src ' || true)"
+if [[ -n "$script_src" && "$script_src" != *unsafe-inline* && "$script_src" == *sha256-* ]]; then
+  pass "/ CSP script-src uses hashes, not 'unsafe-inline'"
+else
+  fail "/ CSP script-src uses hashes, not 'unsafe-inline' (got '${script_src}')"
+fi
 if [[ "$(header cache-control)" == *no-cache* ]]; then pass "/ is revalidated (Cache-Control: no-cache)"; else fail "/ is revalidated (Cache-Control: '$(header cache-control)')"; fi
 if [[ "$base" == https://* ]]; then
   if [[ -n "$(header strict-transport-security)" ]]; then pass "/ sends strict-transport-security"; else fail "/ sends strict-transport-security"; fi
 fi
 
-check_page /about "/about is served by the SPA fallback"
-check_page /this-route-does-not-exist "unknown routes reach the client-side NotFoundPage"
+check_page /about "/about is served as a static page"
+check_page /this-route-does-not-exist "unknown routes get the 404 page with a 404 status" 404
 
-asset="$(printf '%s' "$index_html" | grep -o '/assets/[^"]*\.js' | head -1 || true)"
+fetch /README.md
+if [[ "$STATUS" == 404 ]]; then pass "no stray files are served (/README.md is 404)"; else fail "no stray files are served (/README.md returned ${STATUS})"; fi
+
+asset="$(printf '%s' "$index_html" | grep -o '/_next/static/[^"]*\.js' | head -1 || true)"
 if [[ -z "$asset" ]]; then
-  fail "index.html references a /assets/*.js bundle"
+  fail "index.html references a /_next/static/*.js bundle"
 else
   fetch "$asset"
   if [[ "$STATUS" == 200 && "$(header content-type)" == *javascript* && "$(header cache-control)" == *immutable* ]]; then

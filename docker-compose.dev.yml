@@ -1,11 +1,12 @@
-# Development: the Redwood dev server (Vite, hot reload) in a Node 20
-# container, with the repo bind-mounted.
+# Development: the Next.js dev server (hot reload) in a Node 24 container,
+# with the repo bind-mounted.
 #
 #   ./scripts/docker/dev.sh up
 #   open http://localhost:8910
 #
-# node_modules live in named volumes so the host's macOS-built packages never
-# shadow the Linux ones. After a dependency change run `dev.sh rebuild`.
+# node_modules and .next live in named volumes so the host's macOS-built
+# packages and build cache never shadow the Linux ones. After a dependency
+# change run `dev.sh rebuild`.
 
 name: coresity-dev
 
@@ -14,19 +15,21 @@ services:
     build:
       context: .
       target: deps
-    command: yarn rw dev web
+    # The dev script listens on 8910; -H makes it reachable from the host.
+    command: npm run dev -- -H 0.0.0.0
     ports:
       - '8910:8910'
     volumes:
       - .:/home/node/app
       - node_modules:/home/node/app/node_modules
-      - web_node_modules:/home/node/app/web/node_modules
+      - next_cache:/home/node/app/.next
     environment:
       - NODE_ENV=development
-      # redwood.toml has [browser] open = true; there is no browser in the
-      # container, and Vite skips opening one when BROWSER=none.
-      - BROWSER=none
+      - NEXT_TELEMETRY_DISABLED=1
+      # File watching over a bind mount is unreliable on macOS and Windows
+      # hosts; polling catches every edit.
+      - WATCHPACK_POLLING=true
 
 volumes:
   node_modules:
-  web_node_modules:
+  next_cache:

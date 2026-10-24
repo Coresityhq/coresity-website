@@ -1,0 +1,9 @@
+node_modules
+.next
+out
+build
+package-lock.json
+playwright-report
+test-results
+public
+skills-lock.json

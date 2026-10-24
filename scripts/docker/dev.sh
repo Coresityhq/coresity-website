@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Run the Redwood dev server (hot reload) in a Node 20 container, with the
+# Run the Next.js dev server (hot reload) in a Node 24 container, with the
 # repo bind-mounted. Serves http://localhost:8910.
 #
 # Usage: scripts/docker/dev.sh <command>
@@ -8,7 +8,7 @@
 #               extra args go to `docker compose up`, e.g. `up -d`
 #   down        stop and remove the container
 #   logs        follow the dev server logs
-#   shell       open a shell in the dev container (yarn rw ... works there)
+#   shell       open a shell in the dev container (npm run ... works there)
 #   rebuild     after a dependency change: drop the node_modules volumes and
 #               rebuild the dev image
 
