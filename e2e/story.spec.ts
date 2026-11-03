@@ -214,6 +214,44 @@ test('fits a phone without horizontal overflow', async ({ page }) => {
   expect(footerTop).toBeGreaterThanOrEqual(ctaBottom)
 })
 
+for (const [width, height] of [
+  [1209, 683],
+  [1440, 700],
+  [1366, 600],
+]) {
+  test(`the final footer clears the call to action at ${width}x${height}`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width, height })
+    await page.goto('/')
+    await scrollScene(page, 'final', 1)
+    await page.waitForTimeout(800)
+
+    const ctaBottom = await page
+      .locator('[data-fin]')
+      .last()
+      .evaluate((e) => e.getBoundingClientRect().bottom)
+    const footer = await page
+      .locator('[data-scene="final"] img')
+      .evaluate((e) => {
+        const r = (e.parentElement as HTMLElement).getBoundingClientRect()
+        return { top: r.top, bottom: r.bottom }
+      })
+    expect(footer.top).toBeGreaterThanOrEqual(ctaBottom)
+    expect(footer.bottom).toBeLessThanOrEqual(height)
+
+    // The stage doesn't outgrow the screen and push its top under the header.
+    const headerBottom = await page
+      .locator('header')
+      .evaluate((e) => e.getBoundingClientRect().bottom)
+    const eyebrowTop = await page
+      .locator('[data-fin]')
+      .first()
+      .evaluate((e) => e.getBoundingClientRect().top)
+    expect(eyebrowTop).toBeGreaterThanOrEqual(headerBottom)
+  })
+}
+
 test('the theme toggle turns the page dark and the choice survives a reload', async ({
   page,
 }) => {
